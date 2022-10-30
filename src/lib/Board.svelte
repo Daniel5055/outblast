@@ -12,7 +12,7 @@
   const centerX = 500;
   const centerY = 500;
 
-  let loser: PBody | null = null
+  let loser: PBody | null | undefined = undefined
 
   const playerRadius = 15;
   const cannonSize = 20;
@@ -277,7 +277,7 @@
   }
   function checkCollisions(body: PBody) {
     // Yucky code
-    let oCollider: PBody | null = null;
+    let oCollider: any = null;
     
     orbiters.forEach((orbiter) => {
       if (orbiter === body) return;
@@ -290,9 +290,13 @@
     if (oCollider !== null) {
       explode(oCollider);
       explode(body);
+      if (oCollider.name !== 'bullet' && body.name !== 'bullet') {
+        loser = null;
+      }
+      return;
     }
 
-    let bCollider: OBody = null;
+    let bCollider: any = null;
 
     bodies.forEach((b) => {
       if (b === body.ignore) return;
@@ -306,7 +310,7 @@
         stick(body, bCollider);
       } else {
         // Check if exploded with player in range
-        bCollider.players.forEach((player) => {
+        bCollider.players.forEach((player: PBody) => {
           const rotAngle = player.targetAngle + bCollider.rotationAngle;
           const px = bCollider.x + Math.cos(rotAngle) * bCollider.radius
           const py = bCollider.y - Math.sin(rotAngle) * bCollider.radius
@@ -391,9 +395,17 @@
 
 <svelte:window on:keydown={onKeyDown} on:keyup={onKeyUp}/>
 
-{#if loser !== null}
-  <h1 id="lost">{loser.name} lost!</h1>
+{#if loser !== undefined}
+  <h1 id="lost">{loser === null ? "You both lose!" : loser.name + " lost!"}</h1>
 {/if}
+
+<div id='left'>
+  Player 1 (red): wasd
+</div>
+
+<div id='right'>
+  Player 2 (blue): arrow keys
+</div>
 
 <svg 
   id='board'
@@ -403,7 +415,7 @@
   width="100%"
   >
   {#each orbiters as orbiter}
-    <circle
+    <circle 
       class={orbiter.id}
       cx={orbiter.x}
       cy={orbiter.y}
@@ -416,6 +428,7 @@
       >
         {#each body.players as player}
           <rect 
+            class="cannon"
             transform={`rotate(${-player.targetAngle * 180 / Math.PI - player.cannonAngle * 180 / Math.PI} ${body.x + player.x} ${body.y + player.y})`}
             x={body.x + player.x - cannonSize/2}
             y={body.y + player.y - cannonSize/2}
@@ -430,11 +443,14 @@
         {/each}
         <circle
           class="body"
-          fill="transparent"
-          stroke="black"
           cx={body.x}
           cy={body.y}
           r={body.radius}/>
+        <circle
+          class="spot"
+          cx={body.x + body.radius / 4 * 3}
+          cy={body.y}
+          r={5}/>
 
       </g>
       <text
@@ -450,10 +466,13 @@
   {/each}
 
 </svg>
-
 <style>
   .body {
     fill: grey;
+    filter: drop-shadow(0 0 1px grey);
+  }
+  .spot {
+    fill: #444 
   }
 
   #lost {
@@ -461,6 +480,22 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    color: white;
+    -webkit-text-stroke: 1px black;
+  }
+
+  #left {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    color: white;
+  }
+
+  #right {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    color: white;
   }
 
   .p1 {
@@ -468,5 +503,12 @@
   }
   .p2 {
     fill: teal;
+  }
+  .cannon {
+    fill: #888;
+  }
+  .bullet {
+    fill: goldenrod;
+    stroke: whitesmoke;
   }
 </style>

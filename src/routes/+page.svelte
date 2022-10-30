@@ -38,6 +38,8 @@
 <style lang="css">
   :global(body) {
     margin: 0;
+    background-image: url(https://opengameart.org/sites/default/files/bg_space_seamless_1.png);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
   }
   #main {
     width: 100vw;
