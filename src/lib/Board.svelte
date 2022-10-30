@@ -3,13 +3,15 @@
 	import {  onMount } from 'svelte';
 
   let stop = false;
+  let p1: PBody;
+  let p2;
   export let time: number;
   export let step: number;
   const centerX = 500;
   const centerY = 500;
 
   const gravConst = 40;
-  const ejectConst = 0.01;
+  const ejectConst = 0.04;
   const dampConst = 0.00001;
 
   const createCenteredBody = createBody.bind(null, centerX, centerY)
@@ -31,8 +33,8 @@
       orbitClockwise: true,
       rotateClockwise: true,
       orbitDistance: 300,
-      orbitPeriod: 5000,
-      rotationPeriod: 3000,
+      orbitPeriod: 10000,
+      rotationPeriod: 20000,
     }),
     createCenteredBody({
       name: 'Body2',
@@ -62,9 +64,8 @@
       .attr('class', 'o-body')
     */
 
-    const b = bodies[1]
-    const angle = 0;
-    addPlayer({
+    const b = bodies[2]
+    p1 = {
       name: "Daniel",
       vx: 0,
       vy: 0,
@@ -74,8 +75,8 @@
       radius: 15,
       target: null,
       ignore: null,
-    }, b, 0)
-
+    }
+    addPlayer(p1, b, Math.PI) 
   })
 
   $: if (!stop) {
@@ -85,24 +86,27 @@
       return body
     })
 
-    orbiters = orbiters.map((orbiter) => {
+    orbiters.forEach((orbiter) => {
       // Apply gravity
 
       const distance = Math.sqrt(Math.pow(centerX - orbiter.x, 2) + Math.pow(centerY - orbiter.y, 2));
       const angle = Math.atan((centerY - orbiter.y) / -(centerX - orbiter.x)) + (centerX > orbiter.x ? Math.PI : 0)
 
-      const g = gravConst / Math.pow(distance, 2)
+      // Currently disobeying gravity hahah
+      const g = gravConst / 100000
       damp(orbiter, step);
       applyAcceleration(orbiter, Math.cos(angle + Math.PI) * g, -Math.sin(angle + Math.PI) * g, step)
       move(orbiter, step);
       checkCollisions(orbiter)
       return orbiter;
     })
+
+    orbiters = orbiters
   }
 
   function onKeyDown(e: KeyboardEvent) {
     if (e.key === 'w') {
-      eject(bodies[1].players[0])
+      eject(p1)
     }
   
   }
@@ -123,8 +127,8 @@
       const raw = Math.atan((centerY - player.y) / -(centerX - player.x))
       const angle = centerX > player.x ? raw + Math.PI: raw
 
-      player.vx = Math.cos(rotAngle + Math.PI/2) * 2 * b.radius * Math.PI / b.rotationPeriod + Math.cos(angle + Math.PI/2) * distance * 2 * Math.PI / b.orbitPeriod
-      player.vy = -Math.sin(rotAngle + Math.PI/2) * 2 * b.radius * Math.PI / b.rotationPeriod - Math.sin(angle + Math.PI/2) * distance * 2 * Math.PI / b.orbitPeriod
+      player.vx = Math.cos(rotAngle + Math.PI/2) * 2 * b.radius * Math.PI / b.rotationPeriod + (b.orbitPeriod === 0 ? 0 : Math.cos(angle + Math.PI/2) * distance * 2 * Math.PI / b.orbitPeriod)
+      player.vy = -Math.sin(rotAngle + Math.PI/2) * 2 * b.radius * Math.PI / b.rotationPeriod - (b.orbitPeriod === 0 ? 0 :Math.sin(angle + Math.PI/2) * distance * 2 * Math.PI / b.orbitPeriod)
       player.ignore = b;
 
       applyAcceleration(player, Math.cos(rotAngle) * ejectConst, -Math.sin(rotAngle) * ejectConst, step)
@@ -195,20 +199,23 @@
 
   function stick(orbiter: PBody, body: OBody) {
     orbiters.splice(orbiters.indexOf(orbiter), 1)
-    const angle = Math.atan((orbiter.y - body.y)/-(orbiter.x - body.x)) + orbiter.x < body.x ? Math.PI : 0;
+    const angle = Math.atan((orbiter.y - body.y)/-(orbiter.x - body.x)) + (orbiter.x < body.x ? Math.PI : 0);
     addPlayer(orbiter, body, angle);
-    stop =true;
+    //stop = true;
 
   }
 
   function addPlayer(player: PBody, body: OBody, angle: number) {
+    console.log(body.rotationAngle, angle)
+    console.log(body.rotationAngle - angle)
     player.targetAngle = (angle - body.rotationAngle) % (2 * Math.PI);
     player.vx = 0
     player.vy = 0;
-    player.x = Math.cos(angle) * body.radius;
-    player.y = -1 * Math.sin(angle) * body.radius;
+    player.x = Math.cos(player.targetAngle) * body.radius;
+    player.y = -1 * Math.sin(player.targetAngle) * body.radius;
     player.target = body;
     body.players.push(player);
+    bodies = bodies
   }
 </script>
 
