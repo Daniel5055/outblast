@@ -1,7 +1,6 @@
 <script lang="ts">
-  import * as d3 from 'd3';
-	import { createBody, type OBody } from '../utils/types/Bodies';
-	import { onMount } from 'svelte';
+	import  {createBody, type OBody, type PBody } from '../utils/types/Bodies';
+	import {  onMount } from 'svelte';
 
   export let time: number;
 
@@ -13,7 +12,9 @@
   let bodies: OBody[] = [createCenteredBody({
     name: 'Core',
     radius: 100,
-    angle: 0,
+    startOrbitAngle: 0,
+    orbitClockwise: true,
+    rotateClockwise: true,
     orbitDistance: 0,
     orbitPeriod: 0,
     rotationPeriod: 10000,
@@ -21,18 +22,21 @@
   createCenteredBody({
     name: 'Body',
     radius: 50,
-    angle: 0,
+    startOrbitAngle: 0,
+    orbitClockwise: true,
+    rotateClockwise: true,
     orbitDistance: 300,
     orbitPeriod: 5000,
     rotationPeriod: 5000,
-
   }),
   createCenteredBody({
     name: 'Body',
     radius: 50,
-    angle: 20,
+    startOrbitAngle: 0,
+    orbitClockwise: true,
+    rotateClockwise: true,
     orbitDistance: 500,
-    orbitPeriod: 1000,
+    orbitPeriod: 10000,
     rotationPeriod: 5000,
 
   }),
@@ -49,12 +53,25 @@
       .attr('r', (d, i) => d.radius)
       .attr('class', 'o-body')
     */
+
+    const b = bodies[1]
+    b.players.push({
+      name: "Daniel",
+      vx: 0,
+      vy: 0,
+      cx: b.x + b.radius,
+      cy: b.y,
+      radius: 15,
+    })
+
   })
 
-  $: {bodies.forEach((body) => {
-    body.move(time);
+  $: {
+    bodies = bodies.map((body) => {
+      body.orbitAngle = body.orbitDistance === 0 ? 0 :(time % body.orbitPeriod) / body.orbitPeriod * (body.orbitClockwise ? 2 : -2) * Math.PI;
+      body.rotationAngle = (time % body.rotationPeriod) / body.rotationPeriod * (body.rotateClockwise ? -360 : 360) ;
+      return body
     })
-    bodies = bodies
   }
 </script>
 
@@ -66,11 +83,21 @@
   width="100%"
   >
   {#each bodies as body}
-    <circle
-      cx={body.x}
-      cy={body.y}
-      r={body.radius}></circle>
-    
+    <g
+        transform={`rotate(${body.rotationAngle} ${body.x} ${body.y})`}
+    >
+      <circle
+        cx={body.x}
+        cy={body.y}
+        r={body.radius}/>
+
+      {#each body.players as player}
+        <circle
+          cx={body.x + body.radius}
+          cy={body.y}
+          r={player.radius} />
+      {/each}
+    </g>
   {/each}
 
 </svg>

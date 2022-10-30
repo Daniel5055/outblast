@@ -2,33 +2,42 @@ interface OBodyData {
   name: string
   orbitDistance: number,
   radius: number;
-  angle: number;
+  startOrbitAngle: number;
   orbitPeriod: number;
+  orbitClockwise: boolean
   rotationPeriod: number;
+  rotateClockwise: boolean
 }
 
 export interface OBody extends OBodyData {
+  orbitAngle: number;
+  rotationAngle: number;
   x: number;
   y: number;
-  move: (time: number) => void;
+  players: PBody[];
 }
 
 export const createBody = function(centerX: number, centerY: number, body: OBodyData): OBody {
   return {
     ...body,
-    move: function(time) {
-      this.angle = body.orbitDistance == 0 ? 0 :((time % body.orbitPeriod) / body.orbitPeriod) * 2 * Math.PI;
-      this.x = centerX + Math.cos(this.angle) * body.orbitDistance;
-      this.y = centerY - Math.sin(this.angle) * body.orbitDistance;
+    orbitAngle: body.startOrbitAngle,
+    rotationAngle: 0,
+    players: [],
+    get x() {
+     return centerX + Math.cos(this.orbitAngle) * this.orbitDistance;
     },
-    x: centerX + Math.cos(body.angle) * body.orbitDistance,
-    y: centerY - Math.sin(body.angle) * body.orbitDistance,
+    get y() {
+     return centerY - Math.sin(this.orbitAngle) * this.orbitDistance;
+    }
   }
 }
 
 
-interface PBody {
+export interface PBody {
+  name: string;
   radius: number;
   cx: number;
   cy: number;
+  vy: number;
+  vx: number;
 }
