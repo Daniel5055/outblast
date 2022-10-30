@@ -473,7 +473,6 @@
 <style>
 	.body {
 		fill: grey;
-		filter: drop-shadow(0 0 1px grey);
 	}
 	.spot {
 		fill: #444;
