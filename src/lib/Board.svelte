@@ -361,6 +361,7 @@
 		player.x = Math.cos(player.targetAngle) * body.radius;
 		player.y = -1 * Math.sin(player.targetAngle) * body.radius;
 		player.target = body;
+    player.cannonAngle = Math.PI/2;
 		body.players.push(player);
 		bodies = bodies;
 	}
