@@ -3,11 +3,13 @@
   import { onMount } from "svelte";
 
   let frameTime = 0;
+  let prevFrameTime = 0;
   let currentTime = 0;
   let frames = 0;
   onMount(() => {
     let frameId: number;
     const frame = (time: number) => {
+      prevFrameTime = frameTime
       frameTime = time;
       frameId = requestAnimationFrame(frame);
     }
@@ -30,7 +32,7 @@
 </script>
 
 <div id="main">
-  <Board time={frameTime} />
+  <Board time={frameTime} step={frameTime - prevFrameTime} />
 </div>
 
 <style lang="css">
