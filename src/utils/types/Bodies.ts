@@ -41,6 +41,9 @@ export interface PBody {
   vy: number;
   vx: number;
   targetAngle: number;
+  originalAngle: number;
   target: OBody | null;
   ignore: OBody | null;
+  cannonAngle: number;
+  explode: boolean;
 }

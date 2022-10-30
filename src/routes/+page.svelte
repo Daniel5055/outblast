@@ -36,8 +36,11 @@
 </div>
 
 <style lang="css">
+  :global(body) {
+    margin: 0;
+  }
   #main {
     width: 100vw;
-    height: 100vh
+    height: 99vh
   }
 </style>

@@ -2,16 +2,23 @@
 	import  {createBody, type OBody, type PBody } from '../utils/types/Bodies';
 	import {  onMount } from 'svelte';
 
+  const movements = { p1Left: false, p1Right: false, p2Left: false, p2Right: false }
   let stop = false;
   let p1: PBody;
-  let p2;
+  let p2: PBody;
   export let time: number;
   export let step: number;
   const centerX = 500;
   const centerY = 500;
 
+  let loser: PBody | null = null
+
+  const playerRadius = 20;
+  const cannonSize = 20;
+
   const gravConst = 40;
-  const ejectConst = 0.04;
+  const ejectConst = 0.03;
+  const fireConst = 0.04
   const dampConst = 0.00001;
 
   const createCenteredBody = createBody.bind(null, centerX, centerY)
@@ -45,7 +52,16 @@
       orbitDistance: 500,
       orbitPeriod: 10000,
       rotationPeriod: 5000,
-
+    }),
+    createCenteredBody({
+      name: 'Body3',
+      radius: 40,
+      startOrbitAngle: 50,
+      orbitClockwise: true,
+      rotateClockwise: true,
+      orbitDistance: 400,
+      orbitPeriod: 10000,
+      rotationPeriod: 5000,
     }),
   ]
 
@@ -64,20 +80,40 @@
       .attr('class', 'o-body')
     */
 
-    const b = bodies[2]
     p1 = {
       name: "Daniel",
       vx: 0,
       vy: 0,
       targetAngle: 0,
+      originalAngle: 0,
+      cannonAngle: Math.PI/2,
       x: 0,
       y: 0,
-      radius: 15,
+      radius: playerRadius,
       target: null,
       ignore: null,
+      explode: false,
     }
-    addPlayer(p1, b, Math.PI) 
+    p2 = {
+      name: "Alex",
+      vx: 0,
+      vy: 0,
+      targetAngle: 0,
+      originalAngle: 0,
+      cannonAngle: Math.PI/2,
+      x: 0,
+      y: 0,
+      radius: playerRadius,
+      target: null,
+      ignore: null,
+      explode: false,
+    }
+    addPlayer(p1, bodies[0], Math.PI*3/2) 
+    addPlayer(p2, bodies[0], Math.PI/2) 
   })
+
+  const cannonMovement = 0.05;
+  const cannonEdge = 0.5;
 
   $: if (!stop) {
     bodies = bodies.map((body) => {
@@ -85,6 +121,7 @@
       body.rotationAngle = (time % body.rotationPeriod) / body.rotationPeriod * (body.rotateClockwise ? 2 : -2) * Math.PI;
       return body
     })
+
 
     orbiters.forEach((orbiter) => {
       // Apply gravity
@@ -100,15 +137,70 @@
       checkCollisions(orbiter)
       return orbiter;
     })
-
     orbiters = orbiters
+
+
+    if (movements.p1Left && p1.cannonAngle < Math.PI - cannonEdge) {
+      p1.cannonAngle += cannonMovement;
+    }
+    if (movements.p1Right && p1.cannonAngle > cannonEdge) {
+      p1.cannonAngle -= cannonMovement;
+    }
+    if (movements.p2Left && p2.cannonAngle < Math.PI - cannonEdge) {
+      p2.cannonAngle += cannonMovement;
+    }
+    if (movements.p2Right && p2.cannonAngle > cannonEdge) {
+      p2.cannonAngle -= cannonMovement;
+    }
   }
 
   function onKeyDown(e: KeyboardEvent) {
-    if (e.key === 'w') {
-      eject(p1)
+    switch (e.key) {
+      case 'w':
+        eject(p1);
+        break;
+      case 'a':
+        movements.p1Left = true;
+        break;
+      case 'd':
+        movements.p1Right = true;
+        break;
+      case 's':
+        fire(p1);
+        break;
+      case 'ArrowUp':
+        eject(p2);
+        break;
+      case 'ArrowDown':
+        fire(p2);
+        break;
+      case 'ArrowLeft':
+        movements.p2Left = true;
+        break;
+      case 'ArrowRight':
+        movements.p2Right = true;
+        break;
     }
-  
+
+    console.log(e.key)
+  }
+  function onKeyUp(e: KeyboardEvent) {
+    switch (e.key) {
+      case 'a':
+        movements.p1Left = false;
+        break;
+      case 'd':
+        movements.p1Right = false;
+        break;
+      case 'ArrowLeft':
+        movements.p2Left = false;
+        break;
+      case 'ArrowRight':
+        movements.p2Right = false;
+        break;
+    }
+
+    console.log(e.key)
   }
   function eject(player: PBody) {
     if (player.target !== null) {
@@ -131,7 +223,7 @@
       player.vy = -Math.sin(rotAngle + Math.PI/2) * 2 * b.radius * Math.PI / b.rotationPeriod - (b.orbitPeriod === 0 ? 0 :Math.sin(angle + Math.PI/2) * distance * 2 * Math.PI / b.orbitPeriod)
       player.ignore = b;
 
-      applyAcceleration(player, Math.cos(rotAngle) * ejectConst, -Math.sin(rotAngle) * ejectConst, step)
+      applyAcceleration(player, Math.cos(rotAngle + player.cannonAngle - Math.PI/2) * ejectConst, -Math.sin(rotAngle + player.cannonAngle - Math.PI/2) * ejectConst, step)
       orbiters.push(player)
       orbiters = orbiters
 
@@ -168,28 +260,47 @@
   }
   function checkCollisions(body: PBody) {
     // Yucky code
-    let collider = null;
+    let oCollider: PBody | null = null;
     
     orbiters.forEach((orbiter) => {
       if (orbiter === body) return;
 
       if (doesCollide(body.x, body.y, body.radius, orbiter.x, orbiter.y, orbiter.radius)) {
-        collider = orbiter;
+        oCollider = orbiter;
       }
     });
 
-    if (collider !== null) { console.log('Bang!'); return }
+    if (oCollider !== null) {
+      console.log("hit " + oCollider.name)
+      explode(oCollider);
+      explode(body);
+    }
+
+    let bCollider: OBody = null;
 
     bodies.forEach((b) => {
       if (b === body.ignore) return;
       if (doesCollide(body.x, body.y, body.radius, b.x, b.y, b.radius)) {
-        collider = b;
+        bCollider = b;
       }
-    }, null);
+    });
 
-    if (collider !== null) {
-      console.log('Boom!', collider.name)
-      stick(body, collider)
+    if (bCollider !== null) {
+      if (!body.explode) {
+        stick(body, bCollider);
+      } else {
+        // Check if exploded with player in range
+        bCollider.players.forEach((player) => {
+          const rotAngle = player.targetAngle + bCollider.rotationAngle;
+          const px = bCollider.x + Math.cos(rotAngle) * bCollider.radius
+          const py = bCollider.y - Math.sin(rotAngle) * bCollider.radius
+          if (doesCollide(body.x, body.y, body.radius, px, py, player.radius)) {
+            bCollider.players.splice(bCollider.players.indexOf(player), 1)
+            loser = player;
+          }
+        })
+        explode(body);
+      }
     }
   }
 
@@ -200,9 +311,9 @@
   function stick(orbiter: PBody, body: OBody) {
     orbiters.splice(orbiters.indexOf(orbiter), 1)
     const angle = Math.atan((orbiter.y - body.y)/-(orbiter.x - body.x)) + (orbiter.x < body.x ? Math.PI : 0);
+    orbiter.originalAngle = angle;
     addPlayer(orbiter, body, angle);
-    //stop = true;
-
+    console.log(orbiter.targetAngle, body.rotationAngle, 'Angle')
   }
 
   function addPlayer(player: PBody, body: OBody, angle: number) {
@@ -217,9 +328,58 @@
     body.players.push(player);
     bodies = bodies
   }
+
+  function fire(player: PBody) {
+    const b = player.target;
+    if (b === null) return;
+
+
+    const rotAngle = player.targetAngle + b.rotationAngle;
+    // Calculate new speed
+    const distance = Math.sqrt(Math.pow(centerX - player.x, 2) + Math.pow(centerY - player.y, 2));
+    const raw = Math.atan((centerY - player.y) / -(centerX - player.x))
+    const angle = centerX > player.x ? raw + Math.PI: raw
+
+    const bullet: PBody = {
+      name: "bullet",
+      x: b.x + Math.cos(rotAngle) * b.radius,
+      y: b.y - Math.sin(rotAngle) * b.radius,
+      vx: Math.cos(rotAngle + Math.PI/2) * 2 * b.radius * Math.PI / b.rotationPeriod + (b.orbitPeriod === 0 ? 0 : Math.cos(angle + Math.PI/2) * distance * 2 * Math.PI / b.orbitPeriod),
+      vy: -Math.sin(rotAngle + Math.PI/2) * 2 * b.radius * Math.PI / b.rotationPeriod - (b.orbitPeriod === 0 ? 0 :Math.sin(angle + Math.PI/2) * distance * 2 * Math.PI / b.orbitPeriod),
+      radius: 10,
+      target: null,
+      targetAngle: 0,
+      cannonAngle: 0,
+      originalAngle: 0,
+      ignore: b,
+      explode: true,
+    }
+
+    applyAcceleration(bullet, Math.cos(rotAngle + player.cannonAngle - Math.PI / 2) * fireConst, -Math.sin(rotAngle + player.cannonAngle - Math.PI / 2) * fireConst, step)
+    orbiters.push(bullet)
+    orbiters = orbiters
+
+    setTimeout(() => {
+      if (bullet.ignore === b) {
+        bullet.ignore = null;
+      }
+    }, 1000);
+  } 
+
+  function explode(orbiter: PBody) {
+    orbiters.splice(orbiters.indexOf(orbiter), 1)
+    console.log(orbiter.name + " exploded!")
+    if (!orbiter.explode) {
+      loser = orbiter;
+    }
+  }
 </script>
 
-<svelte:window on:keydown={onKeyDown} />
+<svelte:window on:keydown={onKeyDown} on:keyup={onKeyUp}/>
+
+{#if loser !== null}
+  <h1 id="lost">{loser.name} lost!</h1>
+{/if}
 
 <svg 
   id='board'
@@ -232,19 +392,27 @@
     <g
         transform={`rotate(${body.rotationAngle / Math.PI * -180} ${body.x} ${body.y})`}
     >
+      {#each body.players as player}
+        <circle
+          cx={body.x + player.x}
+          cy={body.y + player.y}
+          r={player.radius} />
+        <rect 
+          transform={`rotate(${-player.targetAngle * 180 / Math.PI - player.cannonAngle * 180 / Math.PI} ${body.x + player.x} ${body.y + player.y})`}
+          x={body.x + player.x - cannonSize/2}
+          y={body.y + player.y - cannonSize/2}
+          width={cannonSize}
+          height={35}
+        ></rect>
+      {/each}
       <circle
+        class="body"
         fill="transparent"
         stroke="black"
         cx={body.x}
         cy={body.y}
         r={body.radius}/>
 
-      {#each body.players as player}
-        <circle
-          cx={body.x + player.x}
-          cy={body.y + player.y}
-          r={player.radius} />
-      {/each}
     </g>
   {/each}
 
@@ -255,3 +423,16 @@
       r={orbiter.radius} />
   {/each}
 </svg>
+
+<style>
+  .body {
+    fill: grey;
+  }
+
+  #lost {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+</style>
