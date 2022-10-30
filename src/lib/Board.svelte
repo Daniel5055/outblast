@@ -353,11 +353,6 @@
     b.bulletProg -= 1;
 
     const rotAngle = player.targetAngle + b.rotationAngle;
-    // Calculate new speed
-    const distance = Math.sqrt(Math.pow(centerX - player.x, 2) + Math.pow(centerY - player.y, 2));
-    const raw = Math.atan((centerY - player.y) / -(centerX - player.x))
-    const angle = centerX > player.x ? raw + Math.PI: raw
-
     const bullet: PBody = {
       id: "bullet",
       name: "bullet",
@@ -398,6 +393,8 @@
 {#if loser !== undefined}
   <h1 id="lost">{loser === null ? "You both lose!" : loser.name + " lost!"}</h1>
 {/if}
+
+<h1 id='title'>OutBlast</h1>
 
 <div id='left'>
   Player 1 (red): wasd
@@ -473,6 +470,14 @@
   }
   .spot {
     fill: #444 
+  }
+
+  #title {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
   }
 
   #lost {

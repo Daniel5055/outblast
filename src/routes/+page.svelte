@@ -40,6 +40,7 @@
     margin: 0;
     background-image: url(https://opengameart.org/sites/default/files/bg_space_seamless_1.png);
     font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: white;
   }
   #main {
     width: 100vw;
