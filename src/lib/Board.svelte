@@ -32,6 +32,7 @@
       orbitDistance: 0,
       orbitPeriod: 0,
       rotationPeriod: 10000,
+      bulletProg: 0,
     }),
     createCenteredBody({
       name: 'Body1',
@@ -40,28 +41,31 @@
       orbitClockwise: true,
       rotateClockwise: true,
       orbitDistance: 300,
-      orbitPeriod: 10000,
-      rotationPeriod: 20000,
+      orbitPeriod: 20000,
+      rotationPeriod: 5000,
+      bulletProg: 4,
     }),
     createCenteredBody({
       name: 'Body2',
       radius: 50,
-      startOrbitAngle: 0,
+      startOrbitAngle: Math.PI,
       orbitClockwise: true,
       rotateClockwise: true,
       orbitDistance: 500,
-      orbitPeriod: 10000,
-      rotationPeriod: 5000,
+      orbitPeriod: 15000,
+      rotationPeriod: 10000,
+      bulletProg: 4,
     }),
     createCenteredBody({
       name: 'Body3',
       radius: 40,
-      startOrbitAngle: 50,
+      startOrbitAngle: Math.PI/2,
       orbitClockwise: true,
       rotateClockwise: true,
       orbitDistance: 400,
       orbitPeriod: 10000,
       rotationPeriod: 5000,
+      bulletProg: 5,
     }),
   ]
 
@@ -81,7 +85,8 @@
     */
 
     p1 = {
-      name: "Daniel",
+      id: "p1",
+      name: "Player 1",
       vx: 0,
       vy: 0,
       targetAngle: 0,
@@ -95,7 +100,8 @@
       explode: false,
     }
     p2 = {
-      name: "Alex",
+      id: "p2",
+      name: "Player 2",
       vx: 0,
       vy: 0,
       targetAngle: 0,
@@ -117,8 +123,10 @@
 
   $: if (!stop) {
     bodies = bodies.map((body) => {
-      body.orbitAngle = body.orbitDistance === 0 ? 0 :(time % body.orbitPeriod) / body.orbitPeriod * (body.orbitClockwise ? 2 : -2) * Math.PI;
+      body.orbitAngle = body.orbitDistance === 0 ? 0 :(time % body.orbitPeriod) / body.orbitPeriod * (body.orbitClockwise ? 2 : -2) * Math.PI + body.startOrbitAngle;
       body.rotationAngle = (time % body.rotationPeriod) / body.rotationPeriod * (body.rotateClockwise ? 2 : -2) * Math.PI;
+      body.bulletProg = body.bulletProg + (0.0001 * body.radius);
+      console.log(body.bulletProg)
       return body
     })
 
@@ -332,7 +340,8 @@
   function fire(player: PBody) {
     const b = player.target;
     if (b === null) return;
-
+    if (b.bulletProg < 1) return;
+    b.bulletProg -= 1;
 
     const rotAngle = player.targetAngle + b.rotationAngle;
     // Calculate new speed
@@ -341,6 +350,7 @@
     const angle = centerX > player.x ? raw + Math.PI: raw
 
     const bullet: PBody = {
+      id: "bullet",
       name: "bullet",
       x: b.x + Math.cos(rotAngle) * b.radius,
       y: b.y - Math.sin(rotAngle) * b.radius,
@@ -388,40 +398,53 @@
   height="100%"
   width="100%"
   >
-  {#each bodies as body}
-    <g
-        transform={`rotate(${body.rotationAngle / Math.PI * -180} ${body.x} ${body.y})`}
-    >
-      {#each body.players as player}
-        <circle
-          cx={body.x + player.x}
-          cy={body.y + player.y}
-          r={player.radius} />
-        <rect 
-          transform={`rotate(${-player.targetAngle * 180 / Math.PI - player.cannonAngle * 180 / Math.PI} ${body.x + player.x} ${body.y + player.y})`}
-          x={body.x + player.x - cannonSize/2}
-          y={body.y + player.y - cannonSize/2}
-          width={cannonSize}
-          height={35}
-        ></rect>
-      {/each}
-      <circle
-        class="body"
-        fill="transparent"
-        stroke="black"
-        cx={body.x}
-        cy={body.y}
-        r={body.radius}/>
-
-    </g>
-  {/each}
-
   {#each orbiters as orbiter}
     <circle
+      class={orbiter.id}
       cx={orbiter.x}
       cy={orbiter.y}
       r={orbiter.radius} />
   {/each}
+  {#each bodies as body}
+    <g>
+      <g
+          transform={`rotate(${body.rotationAngle / Math.PI * -180} ${body.x} ${body.y})`}
+      >
+        {#each body.players as player}
+          <rect 
+            transform={`rotate(${-player.targetAngle * 180 / Math.PI - player.cannonAngle * 180 / Math.PI} ${body.x + player.x} ${body.y + player.y})`}
+            x={body.x + player.x - cannonSize/2}
+            y={body.y + player.y - cannonSize/2}
+            width={cannonSize}
+            height={35}
+          ></rect>
+          <circle
+            class={player.id}
+            cx={body.x + player.x}
+            cy={body.y + player.y}
+            r={player.radius} />
+        {/each}
+        <circle
+          class="body"
+          fill="transparent"
+          stroke="black"
+          cx={body.x}
+          cy={body.y}
+          r={body.radius}/>
+
+      </g>
+      <text
+        x={body.x}
+        y={body.y}
+        dominant-baseline="middle"
+        text-anchor="middle"
+        font-size="{0.03 * body.radius}rem "
+      >
+        {body.bullets}
+      </text>
+    </g>  
+  {/each}
+
 </svg>
 
 <style>
@@ -434,5 +457,12 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+  }
+
+  .p1 {
+    fill: firebrick;
+  }
+  .p2 {
+    fill: teal;
   }
 </style>

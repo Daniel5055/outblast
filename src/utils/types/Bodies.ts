@@ -6,7 +6,8 @@ interface OBodyData {
   orbitPeriod: number;
   orbitClockwise: boolean
   rotationPeriod: number;
-  rotateClockwise: boolean
+  rotateClockwise: boolean;
+  bulletProg: number;
 }
 
 export interface OBody extends OBodyData {
@@ -15,6 +16,7 @@ export interface OBody extends OBodyData {
   x: number;
   y: number;
   players: PBody[];
+  bullets: number;
 }
 
 export const createBody = function(centerX: number, centerY: number, body: OBodyData): OBody {
@@ -28,12 +30,16 @@ export const createBody = function(centerX: number, centerY: number, body: OBody
     },
     get y() {
      return centerY - Math.sin(this.orbitAngle) * this.orbitDistance;
+    },
+    get bullets() {
+      return Math.floor(this.bulletProg)
     }
   }
 }
 
 
 export interface PBody {
+  id: string;
   name: string;
   radius: number;
   x: number;
