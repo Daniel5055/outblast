@@ -36,8 +36,10 @@ export const createBody = function(centerX: number, centerY: number, body: OBody
 export interface PBody {
   name: string;
   radius: number;
-  cx: number;
-  cy: number;
+  x: number;
+  y: number;
   vy: number;
   vx: number;
+  targetAngle: number;
+  target: OBody | null;
 }

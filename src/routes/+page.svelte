@@ -16,6 +16,7 @@
     return () => cancelAnimationFrame(frameId);
   })
 
+  /*
   $: {
     if (frameTime - currentTime > 1000) {
       currentTime = frameTime
@@ -25,6 +26,7 @@
       frames++
     }
   }
+  */
 </script>
 
 <div id="main">
