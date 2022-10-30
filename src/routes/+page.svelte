@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-
+	import Board from "../lib/Board.svelte";
+  import { onMount } from "svelte";
 
   let frameTime = 0;
   let currentTime = 0;
@@ -17,8 +17,8 @@
   })
 
   $: {
-    if (performance.now() - currentTime > 1000) {
-      currentTime = performance.now()
+    if (frameTime - currentTime > 1000) {
+      currentTime = frameTime
       console.log(frames, frameTime)
       frames = 0;
     } else {
@@ -27,5 +27,13 @@
   }
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<div id="main">
+  <Board time={frameTime} />
+</div>
+
+<style lang="css">
+  #main {
+    width: 100vw;
+    height: 100vh
+  }
+</style>
