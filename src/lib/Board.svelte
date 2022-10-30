@@ -1,6 +1,7 @@
 <script lang="ts">
 	import  {createBody, type OBody, type PBody } from '../utils/types/Bodies';
 	import {  onMount } from 'svelte';
+	import { randomisePlanets } from '../utils/maps/base';
 
   const movements = { p1Left: false, p1Right: false, p2Left: false, p2Right: false }
   let stop = false;
@@ -13,7 +14,7 @@
 
   let loser: PBody | null = null
 
-  const playerRadius = 20;
+  const playerRadius = 15;
   const cannonSize = 20;
 
   const gravConst = 40;
@@ -23,12 +24,12 @@
 
   const createCenteredBody = createBody.bind(null, centerX, centerY)
 
-  let bodies: OBody[] = [createCenteredBody({
+  let bodies = [createCenteredBody({
       name: 'Core',
       radius: 100,
       startOrbitAngle: 0,
       orbitClockwise: true,
-      rotateClockwise: true,
+      rotateClockwise: false,
       orbitDistance: 0,
       orbitPeriod: 0,
       rotationPeriod: 10000,
@@ -38,8 +39,8 @@
       name: 'Body1',
       radius: 50,
       startOrbitAngle: 0,
-      orbitClockwise: true,
-      rotateClockwise: true,
+      orbitClockwise: false,
+      rotateClockwise: false,
       orbitDistance: 300,
       orbitPeriod: 20000,
       rotationPeriod: 5000,
@@ -59,6 +60,17 @@
     createCenteredBody({
       name: 'Body3',
       radius: 40,
+      startOrbitAngle: 2* Math.PI,
+      orbitClockwise: true,
+      rotateClockwise: true,
+      orbitDistance: 390,
+      orbitPeriod: 10000,
+      rotationPeriod: 8000,
+      bulletProg: 4,
+    }),
+    createCenteredBody({
+      name: 'Body4',
+      radius: 40,
       startOrbitAngle: Math.PI/2,
       orbitClockwise: true,
       rotateClockwise: true,
@@ -68,6 +80,8 @@
       bulletProg: 5,
     }),
   ]
+
+  //let bodies = randomisePlanets(centerX, centerY, 5);
 
   let orbiters: PBody[] = [];
 
@@ -126,7 +140,6 @@
       body.orbitAngle = body.orbitDistance === 0 ? 0 :(time % body.orbitPeriod) / body.orbitPeriod * (body.orbitClockwise ? 2 : -2) * Math.PI + body.startOrbitAngle;
       body.rotationAngle = (time % body.rotationPeriod) / body.rotationPeriod * (body.rotateClockwise ? 2 : -2) * Math.PI;
       body.bulletProg = body.bulletProg + (0.0001 * body.radius);
-      console.log(body.bulletProg)
       return body
     })
 
@@ -189,8 +202,6 @@
         movements.p2Right = true;
         break;
     }
-
-    console.log(e.key)
   }
   function onKeyUp(e: KeyboardEvent) {
     switch (e.key) {
@@ -207,8 +218,6 @@
         movements.p2Right = false;
         break;
     }
-
-    console.log(e.key)
   }
   function eject(player: PBody) {
     if (player.target !== null) {
@@ -279,7 +288,6 @@
     });
 
     if (oCollider !== null) {
-      console.log("hit " + oCollider.name)
       explode(oCollider);
       explode(body);
     }
@@ -321,12 +329,9 @@
     const angle = Math.atan((orbiter.y - body.y)/-(orbiter.x - body.x)) + (orbiter.x < body.x ? Math.PI : 0);
     orbiter.originalAngle = angle;
     addPlayer(orbiter, body, angle);
-    console.log(orbiter.targetAngle, body.rotationAngle, 'Angle')
   }
 
   function addPlayer(player: PBody, body: OBody, angle: number) {
-    console.log(body.rotationAngle, angle)
-    console.log(body.rotationAngle - angle)
     player.targetAngle = (angle - body.rotationAngle) % (2 * Math.PI);
     player.vx = 0
     player.vy = 0;
@@ -378,7 +383,6 @@
 
   function explode(orbiter: PBody) {
     orbiters.splice(orbiters.indexOf(orbiter), 1)
-    console.log(orbiter.name + " exploded!")
     if (!orbiter.explode) {
       loser = orbiter;
     }
@@ -416,7 +420,7 @@
             x={body.x + player.x - cannonSize/2}
             y={body.y + player.y - cannonSize/2}
             width={cannonSize}
-            height={35}
+            height={30}
           ></rect>
           <circle
             class={player.id}
