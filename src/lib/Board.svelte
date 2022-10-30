@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { createBody, type OBody, type PBody } from '../utils/types/Bodies';
 	import { onMount } from 'svelte';
-	import { randomisePlanets } from '../utils/maps/base';
 
 	const movements = { p1Left: false, p1Right: false, p2Left: false, p2Right: false };
 	let stop = false;
@@ -87,18 +86,6 @@
 	let orbiters: PBody[] = [];
 
 	onMount(() => {
-		/*
-    d3.select('#board').selectAll('circle')
-      .data(data)
-      .enter()
-      .append('circle')
-      .attr('cx', (d, i) => centerX + Math.cos(d.angle) * d.orbitDistance)
-      .attr('cy', (d, i) => centerY - Math.sin(d.angle) * d.orbitDistance)
-      .attr('r', (d, i) => d.null
-      console.log('remradius)
-      .attr('class', 'o-body')
-    */
-
 		p1 = {
 			id: 'p1',
 			name: 'Player 1',

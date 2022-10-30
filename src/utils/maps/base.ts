@@ -31,7 +31,7 @@ export function randomisePlanets(centerX: number, centerY: number, count: number
 				bulletProg: randomFromRange(0, 5)
 			})
 		);
-		console.log(bodies.at(-1).orbitDistance);
+		console.log(bodies.at(-1)?.orbitDistance);
 	}
 
 	console.log(randomFromRange(0, 1), 'random');
