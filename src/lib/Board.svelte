@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createBody, type OBody, type PBody } from '../utils/types/Bodies';
 	import { onMount } from 'svelte';
+	import { randomisePlanets } from '../utils/maps/base';
 
 	const movements = { p1Left: false, p1Right: false, p2Left: false, p2Right: false };
 	let stop = false;
@@ -38,19 +39,19 @@
 		createCenteredBody({
 			name: 'Body1',
 			radius: 50,
-			startOrbitAngle: 0,
+			startOrbitAngle: 3,
 			orbitClockwise: false,
 			rotateClockwise: false,
-			orbitDistance: 300,
-			orbitPeriod: 20000,
+			orbitDistance: 250,
+			orbitPeriod: 25000,
 			rotationPeriod: 5000,
 			bulletProg: 4
 		}),
 		createCenteredBody({
 			name: 'Body2',
 			radius: 50,
-			startOrbitAngle: Math.PI,
-			orbitClockwise: true,
+			startOrbitAngle: 0,
+			orbitClockwise: false,
 			rotateClockwise: true,
 			orbitDistance: 500,
 			orbitPeriod: 15000,
@@ -62,9 +63,9 @@
 			radius: 40,
 			startOrbitAngle: 2 * Math.PI,
 			orbitClockwise: true,
-			rotateClockwise: true,
+			rotateClockwise: false,
 			orbitDistance: 390,
-			orbitPeriod: 10000,
+			orbitPeriod: 12000,
 			rotationPeriod: 8000,
 			bulletProg: 4
 		}),
@@ -75,13 +76,13 @@
 			orbitClockwise: true,
 			rotateClockwise: true,
 			orbitDistance: 400,
-			orbitPeriod: 10000,
+			orbitPeriod: 12000,
 			rotationPeriod: 5000,
 			bulletProg: 5
 		})
 	];
 
-	//let bodies = randomisePlanets(centerX, centerY, 5);
+	//let bodies = randomisePlanets(centerX, centerY, 4);
 
 	let orbiters: PBody[] = [];
 
