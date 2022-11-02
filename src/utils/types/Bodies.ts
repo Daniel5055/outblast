@@ -11,25 +11,24 @@ interface OBodyData {
 }
 
 export interface OBody extends OBodyData {
-	orbitAngle: number;
+	orbitAngle: number | undefined;
 	rotationAngle: number;
 	x: number;
 	y: number;
 	players: PBody[];
-	bullets: number;
+	readonly bullets: number;
 }
 
 export const createBody = function (centerX: number, centerY: number, body: OBodyData): OBody {
 	return {
 		...body,
-		orbitAngle: body.startOrbitAngle,
+		x: 0,
+		y: 0,
 		rotationAngle: 0,
 		players: [],
-		get x() {
-			return centerX + Math.cos(this.orbitAngle) * this.orbitDistance;
-		},
-		get y() {
-			return centerY - Math.sin(this.orbitAngle) * this.orbitDistance;
+		set orbitAngle(angle: number) {
+			this.x = centerX + Math.cos(angle) * this.orbitDistance;
+			this.y = centerY - Math.sin(angle) * this.orbitDistance;
 		},
 		get bullets() {
 			return Math.floor(this.bulletProg);
