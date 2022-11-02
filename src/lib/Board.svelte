@@ -181,31 +181,33 @@
 	}
 
 	function onKeyDown(e: KeyboardEvent) {
-		switch (e.key) {
-			case 'w':
-				eject(p1);
-				break;
-			case 'a':
-				movements.p1Left = true;
-				break;
-			case 'd':
-				movements.p1Right = true;
-				break;
-			case 's':
-				fire(p1);
-				break;
-			case 'ArrowUp':
-				eject(p2);
-				break;
-			case 'ArrowDown':
-				fire(p2);
-				break;
-			case 'ArrowLeft':
-				movements.p2Left = true;
-				break;
-			case 'ArrowRight':
-				movements.p2Right = true;
-				break;
+		if (loser === undefined) {
+			switch (e.key) {
+				case 'w':
+					eject(p1);
+					break;
+				case 'a':
+					movements.p1Left = true;
+					break;
+				case 'd':
+					movements.p1Right = true;
+					break;
+				case 's':
+					fire(p1);
+					break;
+				case 'ArrowUp':
+					eject(p2);
+					break;
+				case 'ArrowDown':
+					fire(p2);
+					break;
+				case 'ArrowLeft':
+					movements.p2Left = true;
+					break;
+				case 'ArrowRight':
+					movements.p2Right = true;
+					break;
+			}
 		}
 	}
 	function onKeyUp(e: KeyboardEvent) {
