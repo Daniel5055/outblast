@@ -1,4 +1,4 @@
-interface OBodyData {
+interface BodyData {
 	name: string;
 	orbitDistance: number;
 	radius: number;
@@ -10,16 +10,16 @@ interface OBodyData {
 	bulletProg: number;
 }
 
-export interface OBody extends OBodyData {
+export interface Body extends BodyData {
 	orbitAngle: number | undefined;
 	rotationAngle: number;
 	x: number;
 	y: number;
-	players: PBody[];
+	players: Orbiter[];
 	readonly bullets: number;
 }
 
-export const createBody = function (centerX: number, centerY: number, body: OBodyData): OBody {
+export const createBody = function (centerX: number, centerY: number, body: BodyData): Body {
 	return {
 		...body,
 		x: 0,
@@ -36,7 +36,7 @@ export const createBody = function (centerX: number, centerY: number, body: OBod
 	};
 };
 
-export interface PBody {
+export interface Orbiter {
 	id: string;
 	name: string;
 	radius: number;
@@ -46,8 +46,8 @@ export interface PBody {
 	vx: number;
 	targetAngle: number;
 	originalAngle: number;
-	target: OBody | null;
-	ignore: OBody | null;
+	target: Body | null;
+	ignore: Body | null;
 	cannonAngle: number;
 	explode: boolean;
 }

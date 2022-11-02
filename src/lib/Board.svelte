@@ -1,18 +1,19 @@
 <script lang="ts">
-	import { createBody, type OBody, type PBody } from '../utils/types/Bodies';
+	import { createBody, type Body, type Orbiter } from '../utils/types/bodies';
 	import { onMount } from 'svelte';
 	import { randomisePlanets } from '../utils/maps/base';
+	import { applyAcceleration, damp, move } from '../utils/functions/orbiter';
 
 	const movements = { p1Left: false, p1Right: false, p2Left: false, p2Right: false };
 	let stop = false;
-	let p1: PBody;
-	let p2: PBody;
+	let p1: Orbiter;
+	let p2: Orbiter;
 	export let time: number;
 	export let step: number;
 	const centerX = 500;
 	const centerY = 500;
 
-	let loser: PBody | null | undefined = undefined;
+	let loser: Orbiter | null | undefined = undefined;
 
 	const playerRadius = 15;
 	const cannonSize = 20;
@@ -84,7 +85,7 @@
 
 	//let bodies = randomisePlanets(centerX, centerY, 4);
 
-	let orbiters: PBody[] = [];
+	let orbiters: Orbiter[] = [];
 
 	onMount(() => {
 		p1 = {
@@ -153,7 +154,7 @@
 
 			// Currently disobeying gravity hahah
 			const g = gravConst / 100000;
-			damp(orbiter, step);
+			damp(orbiter, dampConst, step);
 			applyAcceleration(
 				orbiter,
 				Math.cos(angle + Math.PI) * g,
@@ -226,7 +227,7 @@
 				break;
 		}
 	}
-	function eject(player: PBody) {
+	function eject(player: Orbiter) {
 		if (player.target !== null) {
 			const b = player.target;
 			player.target = null;
@@ -272,30 +273,7 @@
 		}
 	}
 
-	function applyAcceleration(body: PBody, ax: number, ay: number, step: number) {
-		body.vx += ax * step;
-		body.vy += ay * step;
-	}
-
-	function move(body: PBody, step: number) {
-		body.x += body.vx * step;
-		body.y += body.vy * step;
-	}
-
-	function damp(body: PBody, step: number) {
-		const damp = dampConst * step;
-		if (Math.abs(body.vx) < damp) {
-			body.vx = 0;
-		} else {
-			body.vx += (body.vx > 0 ? -1 : 1) * damp;
-		}
-		if (Math.abs(body.vy) < damp) {
-			body.vy = 0;
-		} else {
-			body.vy += (body.vy > 0 ? -1 : 1) * damp;
-		}
-	}
-	function checkCollisions(body: PBody) {
+	function checkCollisions(body: Orbiter) {
 		// Yucky code
 		let oCollider: any = null;
 
@@ -330,7 +308,7 @@
 				stick(body, bCollider);
 			} else {
 				// Check if exploded with player in range
-				bCollider.players.forEach((player: PBody) => {
+				bCollider.players.forEach((player: Orbiter) => {
 					const rotAngle = player.targetAngle + bCollider.rotationAngle;
 					const px = bCollider.x + Math.cos(rotAngle) * bCollider.radius;
 					const py = bCollider.y - Math.sin(rotAngle) * bCollider.radius;
@@ -348,34 +326,34 @@
 		return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)) < r1 + r2;
 	}
 
-	function stick(orbiter: PBody, body: OBody) {
-		orbiters.splice(orbiters.indexOf(orbiter), 1);
+	function stick(player: Orbiter, body: Body) {
+		orbiters.splice(orbiters.indexOf(player), 1);
 		const angle =
-			Math.atan((orbiter.y - body.y) / -(orbiter.x - body.x)) + (orbiter.x < body.x ? Math.PI : 0);
-		orbiter.originalAngle = angle;
-		addPlayer(orbiter, body, angle);
+			Math.atan((player.y - body.y) / -(player.x - body.x)) + (player.x < body.x ? Math.PI : 0);
+		player.originalAngle = angle;
+		addPlayer(player, body, angle);
 	}
 
-	function addPlayer(player: PBody, body: OBody, angle: number) {
+	function addPlayer(player: Orbiter, body: Body, angle: number) {
 		player.targetAngle = (angle - body.rotationAngle) % (2 * Math.PI);
 		player.vx = 0;
 		player.vy = 0;
 		player.x = Math.cos(player.targetAngle) * body.radius;
 		player.y = -1 * Math.sin(player.targetAngle) * body.radius;
 		player.target = body;
-    player.cannonAngle = Math.PI/2;
+		player.cannonAngle = Math.PI / 2;
 		body.players.push(player);
 		bodies = bodies;
 	}
 
-	function fire(player: PBody) {
+	function fire(player: Orbiter) {
 		const b = player.target;
 		if (b === null) return;
 		if (b.bulletProg < 1) return;
 		b.bulletProg -= 1;
 
 		const rotAngle = player.targetAngle + b.rotationAngle;
-		const bullet: PBody = {
+		const bullet: Orbiter = {
 			id: 'bullet',
 			name: 'bullet',
 			x: b.x + Math.cos(rotAngle) * b.radius,
@@ -407,7 +385,7 @@
 		}, 1000);
 	}
 
-	function explode(orbiter: PBody) {
+	function explode(orbiter: Orbiter) {
 		orbiters.splice(orbiters.indexOf(orbiter), 1);
 		if (!orbiter.explode) {
 			loser = orbiter;

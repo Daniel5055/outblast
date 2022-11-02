@@ -1,4 +1,4 @@
-import { createBody } from '../types/Bodies';
+import { createBody } from '../types/bodies';
 
 export function randomisePlanets(centerX: number, centerY: number, count: number) {
 	const createCenteredBody = createBody.bind(null, centerX, centerY);
