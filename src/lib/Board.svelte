@@ -73,8 +73,6 @@
 	const centerX = 500;
 	const centerY = 500;
 
-	let winner: Player | null | undefined = undefined;
-
 	const gravConst = 40;
 	const ejectConst = 0.03;
 	const fireConst = 0.04;
@@ -163,9 +161,12 @@
 	const cannonMovement = 0.05 / 17;
 	const cannonEdge = 0.5;
 
-	$: { time; frameOver = false}
+	$: {
+		time;
+		frameOver = false;
+	}
 	$: if (!stop && !frameOver) {
-		frameOver = true
+		frameOver = true;
 		bodies = bodies.map((body) => {
 			body.orbitAngle =
 				body.orbitDistance === 0
@@ -218,12 +219,14 @@
 	}
 
 	function onKeyDown(e: KeyboardEvent) {
-		if (winner === undefined) {
+		if (!gameOver) {
 			onkeyDownMappings[e.key]?.();
 		}
 	}
 	function onKeyUp(e: KeyboardEvent) {
-		onkeyUpMappings[e.key]?.();
+		if (!gameOver) {
+			onkeyUpMappings[e.key]?.();
+		}
 	}
 	function eject(player: Player) {
 		if (player.target !== null) {
@@ -318,11 +321,11 @@
 			});
 
 			if (collision) {
-				return
+				return;
 			}
 
 			if (orbiter.explode) {
-				explode(orbiter)
+				explode(orbiter);
 			} else {
 				stick(orbiter as Player, bCollider);
 			}
@@ -390,23 +393,32 @@
 	}
 
 	function kill(player: Player) {
-		playerObjects.splice(playerObjects.findIndex((p) => p.id === player.id), 1);
-		if (playerObjects.length === 1 && winner == undefined) {
-			winner = playerObjects[0];
-			playerWon(winner.name);
+		playerObjects.splice(
+			playerObjects.findIndex((p) => p.id === player.id),
+			1
+		);
+		if (playerObjects.length === 1 && !gameOver) {
+			playerWon(playerObjects[0].name);
+			gameOver = true;
 		}
 	}
 
 	function doubleKill(player1: Player, player2: Player) {
-		playerObjects.splice(playerObjects.findIndex((p) => p.id === player1.id), 1);
-		playerObjects.splice(playerObjects.findIndex((p) => p.id === player2.id), 1);
-		if (winner === undefined) {
+		playerObjects.splice(
+			playerObjects.findIndex((p) => p.id === player1.id),
+			1
+		);
+		playerObjects.splice(
+			playerObjects.findIndex((p) => p.id === player2.id),
+			1
+		);
+		if (!gameOver) {
 			if (playerObjects.length === 1) {
-				winner = playerObjects[0];
-				playerWon(winner.name);
-			} else if (playerObjects.length === 0 ) {
-				winner = null;
+				playerWon(playerObjects[0].name);
+				gameOver = true;
+			} else if (playerObjects.length === 0) {
 				playerWon(null);
+				gameOver = true;
 			}
 		}
 	}
@@ -476,10 +488,10 @@
 	}
 
 	.p1 {
-		fill: var(--player1-colour)
+		fill: var(--player1-colour);
 	}
 	.p2 {
-		fill: var(--player2-colour)
+		fill: var(--player2-colour);
 	}
 	.cannon {
 		fill: #888;

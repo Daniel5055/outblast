@@ -26,16 +26,14 @@
 	const scores = Object.fromEntries(players.map((player) => [player.name, 0]));
 
 	const playerWon = (name: string | null) => {
-		if (name !== null) {
-			scores[name]++;
-		}
-
 		winner = name;
-	}
+	};
 
 	let frameTime = 0;
 	let prevFrameTime = 0;
+	let frameTimeStart = 0;
 	let winner: string | null | undefined = undefined;
+	let refresh = false;
 
 	onMount(() => {
 		let frameId: number;
@@ -48,9 +46,29 @@
 
 		return () => cancelAnimationFrame(frameId);
 	});
+
+	function onKeyDown(e: KeyboardEvent) {
+		if (winner !== undefined && e.key === ' ') {
+			reset();
+		}
+	}
+
+	function reset() {
+		if (winner != null) {
+			scores[winner]++;
+		}
+		refresh = true;
+		winner = undefined;
+		frameTimeStart = frameTime;
+		setTimeout(() => (refresh = false), 0);
+	}
 </script>
 
-<Board time={frameTime} step={frameTime - prevFrameTime} players={players} playerWon={playerWon} />
+{#key refresh}
+	<Board time={frameTime - frameTimeStart} step={frameTime - prevFrameTime} {players} {playerWon} />
+{/key}
+
+<svelte:window on:keydown={onKeyDown} />
 
 <h1 id="title" class="overlay">OutBlast</h1>
 
