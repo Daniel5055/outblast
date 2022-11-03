@@ -307,9 +307,9 @@
 					bCollider.players.splice(bCollider.players.indexOf(player), 1);
 
 					if (orbiter.explode) {
-						doubleKill(orbiter as Player, player);
-					} else {
 						kill(player);
+					} else {
+						doubleKill(orbiter as Player, player);
 					}
 					explode(orbiter);
 					return true;
@@ -414,64 +414,60 @@
 
 <svelte:window on:keydown={onKeyDown} on:keyup={onKeyUp} />
 
-{#if winner !== undefined}
-	<h1 id="lost">{winner === null ? 'You both lose!' : winner.name + ' won!'}</h1>
-{/if}
-
-<h1 id="title">OutBlast</h1>
-
-<div id="left">Player 1 (red): wasd</div>
-
-<div id="right">Player 2 (blue): arrow keys</div>
-
-<svg
-	id="board"
-	xmlns="http://www.w3.org/2000/svg"
-	viewBox="0 0 1000 1000"
-	height="100%"
-	width="100%"
->
-	{#each orbiters as orbiter}
-		<circle class={orbiter.id} cx={orbiter.x} cy={orbiter.y} r={orbiter.radius} />
-	{/each}
-	{#each bodies as body}
-		<g>
-			<g transform={`rotate(${(body.rotationAngle / Math.PI) * -180} ${body.x} ${body.y})`}>
-				{#each body.players as player}
-					<rect
-						class="cannon"
-						transform={`rotate(${
-							(-player.targetAngle * 180) / Math.PI - (player.cannonAngle * 180) / Math.PI
-						} ${body.x + player.x} ${body.y + player.y})`}
-						x={body.x + player.x - player.cannonWidth / 2}
-						y={body.y + player.y - player.cannonWidth / 2}
-						width={player.cannonWidth}
-						height={player.cannonHeight}
-					/>
-					<circle
-						class={player.id}
-						cx={body.x + player.x}
-						cy={body.y + player.y}
-						r={player.radius}
-					/>
-				{/each}
-				<circle class="body" cx={body.x} cy={body.y} r={body.radius} />
-				<circle class="spot" cx={body.x + (body.radius / 4) * 3} cy={body.y} r={5} />
+<div id="wrapper">
+	<svg
+		id="board"
+		xmlns="http://www.w3.org/2000/svg"
+		viewBox="0 0 1000 1000"
+		height="100%"
+		width="100%"
+	>
+		{#each orbiters as orbiter}
+			<circle class={orbiter.id} cx={orbiter.x} cy={orbiter.y} r={orbiter.radius} />
+		{/each}
+		{#each bodies as body}
+			<g>
+				<g transform={`rotate(${(body.rotationAngle / Math.PI) * -180} ${body.x} ${body.y})`}>
+					{#each body.players as player}
+						<rect
+							class="cannon"
+							transform={`rotate(${
+								(-player.targetAngle * 180) / Math.PI - (player.cannonAngle * 180) / Math.PI
+							} ${body.x + player.x} ${body.y + player.y})`}
+							x={body.x + player.x - player.cannonWidth / 2}
+							y={body.y + player.y - player.cannonWidth / 2}
+							width={player.cannonWidth}
+							height={player.cannonHeight}
+						/>
+						<circle
+							class={player.id}
+							cx={body.x + player.x}
+							cy={body.y + player.y}
+							r={player.radius}
+						/>
+					{/each}
+					<circle class="body" cx={body.x} cy={body.y} r={body.radius} />
+					<circle class="spot" cx={body.x + (body.radius / 4) * 3} cy={body.y} r={5} />
+				</g>
+				<text
+					x={body.x}
+					y={body.y}
+					dominant-baseline="middle"
+					text-anchor="middle"
+					font-size="{0.03 * body.radius}rem "
+				>
+					{body.bullets}
+				</text>
 			</g>
-			<text
-				x={body.x}
-				y={body.y}
-				dominant-baseline="middle"
-				text-anchor="middle"
-				font-size="{0.03 * body.radius}rem "
-			>
-				{body.bullets}
-			</text>
-		</g>
-	{/each}
-</svg>
+		{/each}
+	</svg>
+</div>
 
 <style>
+	#wrapper {
+		width: 100vw;
+		height: 99vh;
+	}
 	.body {
 		fill: grey;
 	}
@@ -479,42 +475,11 @@
 		fill: #444;
 	}
 
-	#title {
-		position: fixed;
-		top: 20px;
-		left: 50%;
-		transform: translateX(-50%);
-		margin: 0;
-	}
-
-	#lost {
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		color: white;
-		-webkit-text-stroke: 1px black;
-	}
-
-	#left {
-		position: fixed;
-		left: 10px;
-		top: 10px;
-		color: white;
-	}
-
-	#right {
-		position: fixed;
-		top: 10px;
-		right: 10px;
-		color: white;
-	}
-
 	.p1 {
-		fill: firebrick;
+		fill: var(--player1-colour)
 	}
 	.p2 {
-		fill: teal;
+		fill: var(--player2-colour)
 	}
 	.cannon {
 		fill: #888;

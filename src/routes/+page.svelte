@@ -29,10 +29,14 @@
 		if (name !== null) {
 			scores[name]++;
 		}
+
+		winner = name;
 	}
 
 	let frameTime = 0;
 	let prevFrameTime = 0;
+	let winner: string | null | undefined = undefined;
+
 	onMount(() => {
 		let frameId: number;
 		const frame = (time: number) => {
@@ -46,9 +50,23 @@
 	});
 </script>
 
-<div id="main">
-	<Board time={frameTime} step={frameTime - prevFrameTime} players={players} playerWon={playerWon} />
+<Board time={frameTime} step={frameTime - prevFrameTime} players={players} playerWon={playerWon} />
+
+<h1 id="title" class="overlay">OutBlast</h1>
+
+<div id="left" class="overlay">
+	<p>Player 1 (red): wasd</p>
+	<p class="score">{scores[players[0].name]}</p>
 </div>
+
+<div id="right" class="overlay">
+	<p>Player 2 (blue): arrow keys</p>
+	<p class="score">{scores[players[1].name]}</p>
+</div>
+
+{#if winner !== undefined}
+	<h1 id="won" class="overlay">{winner === null ? 'You both lose!' : winner + ' won!'}</h1>
+{/if}
 
 <style lang="css">
 	:global(body) {
@@ -56,9 +74,50 @@
 		background-image: url(https://opengameart.org/sites/default/files/bg_space_seamless_1.png);
 		font-family: Verdana, Geneva, Tahoma, sans-serif;
 		color: white;
+		--player1-colour: firebrick;
+		--player2-colour: teal;
 	}
-	#main {
-		width: 100vw;
-		height: 99vh;
+
+	.overlay {
+		position: fixed;
+	}
+	.overlay p {
+		margin-top: 0;
+		margin-bottom: 0;
+	}
+
+	.overlay .score {
+		margin: 10px 20px;
+		color: var(--player-colour);
+	}
+
+	#left {
+		left: 10px;
+		top: 10px;
+		text-align: left;
+		--player-colour: var(--player1-colour);
+	}
+
+	#title {
+		position: fixed;
+		top: 20px;
+		left: 50%;
+		transform: translateX(-50%);
+		margin: 0;
+	}
+
+	#right {
+		position: fixed;
+		top: 10px;
+		right: 10px;
+		text-align: right;
+		--player-colour: var(--player2-colour);
+	}
+
+	#won {
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		-webkit-text-stroke: 1px black;
 	}
 </style>
