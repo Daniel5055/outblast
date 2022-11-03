@@ -1,22 +1,19 @@
 <script lang="ts">
-	import { createBody, type Body, type Orbiter } from '../utils/types/bodies';
+	import { createBody, createBullet, createPlayer, type Body, type Orbiter, type Player } from '../utils/types/bodies';
 	import { onMount } from 'svelte';
 	import { randomisePlanets } from '../utils/maps/base';
 	import { applyAcceleration, damp, move } from '../utils/functions/orbiter';
 
 	const movements = { p1Left: false, p1Right: false, p2Left: false, p2Right: false };
 	let stop = false;
-	let p1: Orbiter;
-	let p2: Orbiter;
+	let p1: Player;
+	let p2: Player;
 	export let time: number;
 	export let step: number;
 	const centerX = 500;
 	const centerY = 500;
 
-	let loser: Orbiter | null | undefined = undefined;
-
-	const playerRadius = 15;
-	const cannonSize = 20;
+	let loser: Player | null | undefined = undefined;
 
 	const gravConst = 40;
 	const ejectConst = 0.03;
@@ -88,36 +85,21 @@
 	let orbiters: Orbiter[] = [];
 
 	onMount(() => {
-		p1 = {
+		p1 = createPlayer({
 			id: 'p1',
 			name: 'Player 1',
-			vx: 0,
-			vy: 0,
 			targetAngle: 0,
-			originalAngle: 0,
 			cannonAngle: Math.PI / 2,
-			x: 0,
-			y: 0,
-			radius: playerRadius,
 			target: null,
-			ignore: null,
-			explode: false
-		};
-		p2 = {
+		});
+		p2 = createPlayer({
 			id: 'p2',
 			name: 'Player 2',
-			vx: 0,
-			vy: 0,
 			targetAngle: 0,
-			originalAngle: 0,
 			cannonAngle: Math.PI / 2,
-			x: 0,
-			y: 0,
-			radius: playerRadius,
 			target: null,
-			ignore: null,
-			explode: false
-		};
+		});
+
 		addPlayer(p1, bodies[0], (Math.PI * 3) / 2);
 		addPlayer(p2, bodies[0], Math.PI / 2);
 	});
@@ -227,7 +209,7 @@
 				break;
 		}
 	}
-	function eject(player: Orbiter) {
+	function eject(player: Player) {
 		if (player.target !== null) {
 			const b = player.target;
 			player.target = null;
@@ -273,51 +255,42 @@
 		}
 	}
 
-	function checkCollisions(body: Orbiter) {
-		// Yucky code
-		let oCollider: any = null;
+	function checkCollisions(orbiter: Orbiter) {
 
-		orbiters.forEach((orbiter) => {
-			if (orbiter === body) return;
-
-			if (doesCollide(body.x, body.y, body.radius, orbiter.x, orbiter.y, orbiter.radius)) {
-				oCollider = orbiter;
-			}
+		const oCollider = orbiters.find((o) => {
+			if (orbiter === o) return false;
+			return doesCollide(o.x, o.y, o.radius, orbiter.x, orbiter.y, orbiter.radius);
 		});
 
-		if (oCollider !== null) {
+		if (oCollider) {
 			explode(oCollider);
-			explode(body);
-			if (oCollider.name !== 'bullet' && body.name !== 'bullet') {
+			explode(orbiter);
+			if (oCollider.name !== 'bullet' && orbiter.name !== 'bullet') {
 				loser = null;
 			}
 			return;
 		}
 
-		let bCollider: any = null;
-
-		bodies.forEach((b) => {
-			if (b === body.ignore) return;
-			if (doesCollide(body.x, body.y, body.radius, b.x, b.y, b.radius)) {
-				bCollider = b;
-			}
+		const bCollider = bodies.find((b) => {
+			if (b === (orbiter as Player).ignore) return;
+			return doesCollide(orbiter.x, orbiter.y, orbiter.radius, b.x, b.y, b.radius);
 		});
 
-		if (bCollider !== null) {
-			if (!body.explode) {
-				stick(body, bCollider);
+		if (bCollider) {
+			if (!orbiter.explode) {
+				stick(orbiter as Player, bCollider);
 			} else {
 				// Check if exploded with player in range
-				bCollider.players.forEach((player: Orbiter) => {
+				bCollider.players.forEach((player: Player) => {
 					const rotAngle = player.targetAngle + bCollider.rotationAngle;
 					const px = bCollider.x + Math.cos(rotAngle) * bCollider.radius;
 					const py = bCollider.y - Math.sin(rotAngle) * bCollider.radius;
-					if (doesCollide(body.x, body.y, body.radius, px, py, player.radius)) {
+					if (doesCollide(orbiter.x, orbiter.y, orbiter.radius, px, py, player.radius)) {
 						bCollider.players.splice(bCollider.players.indexOf(player), 1);
 						loser = player;
 					}
 				});
-				explode(body);
+				explode(orbiter);
 			}
 		}
 	}
@@ -326,15 +299,14 @@
 		return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)) < r1 + r2;
 	}
 
-	function stick(player: Orbiter, body: Body) {
+	function stick(player: Player, body: Body) {
 		orbiters.splice(orbiters.indexOf(player), 1);
 		const angle =
 			Math.atan((player.y - body.y) / -(player.x - body.x)) + (player.x < body.x ? Math.PI : 0);
-		player.originalAngle = angle;
 		addPlayer(player, body, angle);
 	}
 
-	function addPlayer(player: Orbiter, body: Body, angle: number) {
+	function addPlayer(player: Player, body: Body, angle: number) {
 		player.targetAngle = (angle - body.rotationAngle) % (2 * Math.PI);
 		player.vx = 0;
 		player.vy = 0;
@@ -346,28 +318,22 @@
 		bodies = bodies;
 	}
 
-	function fire(player: Orbiter) {
+	function fire(player: Player) {
 		const b = player.target;
 		if (b === null) return;
 		if (b.bulletProg < 1) return;
 		b.bulletProg -= 1;
 
 		const rotAngle = player.targetAngle + b.rotationAngle;
-		const bullet: Orbiter = {
+		const bullet = createBullet({
 			id: 'bullet',
 			name: 'bullet',
 			x: b.x + Math.cos(rotAngle) * b.radius,
 			y: b.y - Math.sin(rotAngle) * b.radius,
 			vx: (Math.cos(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod,
 			vy: (-Math.sin(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod,
-			radius: 10,
-			target: null,
-			targetAngle: 0,
-			cannonAngle: 0,
-			originalAngle: 0,
 			ignore: b,
-			explode: true
-		};
+		})
 
 		applyAcceleration(
 			bullet,
@@ -388,7 +354,7 @@
 	function explode(orbiter: Orbiter) {
 		orbiters.splice(orbiters.indexOf(orbiter), 1);
 		if (!orbiter.explode) {
-			loser = orbiter;
+			loser = orbiter as Player;
 		}
 	}
 </script>
@@ -424,10 +390,10 @@
 						transform={`rotate(${
 							(-player.targetAngle * 180) / Math.PI - (player.cannonAngle * 180) / Math.PI
 						} ${body.x + player.x} ${body.y + player.y})`}
-						x={body.x + player.x - cannonSize / 2}
-						y={body.y + player.y - cannonSize / 2}
-						width={cannonSize}
-						height={30}
+						x={body.x + player.x - player.cannonWidth / 2}
+						y={body.y + player.y - player.cannonWidth / 2}
+						width={player.cannonWidth}
+						height={player.cannonHeight}
 					/>
 					<circle
 						class={player.id}
