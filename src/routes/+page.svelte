@@ -5,7 +5,6 @@
 	const players = [
 		{
 			name: 'Player 1',
-			score: 0,
 			keys: {
 				eject: 'w',
 				left: 'a',
@@ -15,7 +14,6 @@
 		},
 		{
 			name: 'Player 2',
-			score: 0,
 			keys: {
 				eject: 'ArrowUp',
 				left: 'ArrowLeft',
@@ -24,6 +22,14 @@
 			}
 		}
 	];
+
+	const scores = Object.fromEntries(players.map((player) => [player.name, 0]));
+
+	const playerWon = (name: string | null) => {
+		if (name !== null) {
+			scores[name]++;
+		}
+	}
 
 	let frameTime = 0;
 	let prevFrameTime = 0;
@@ -41,7 +47,7 @@
 </script>
 
 <div id="main">
-	<Board time={frameTime} step={frameTime - prevFrameTime} {players} />
+	<Board time={frameTime} step={frameTime - prevFrameTime} players={players} playerWon={playerWon} />
 </div>
 
 <style lang="css">

@@ -8,13 +8,14 @@
 	let stop = false;
 	export let time: number;
 	export let step: number;
+	export let playerWon: (name: string | null) => void;
 	export let players: {
 		name: string;
-		score: number;
 		keys: { left: string; right: string; eject: string; fire: string };
 	}[];
 
 	let frameOver = false;
+	let gameOver = false;
 
 	const onkeyDownMappings = Object.fromEntries(
 		players
@@ -72,7 +73,7 @@
 	const centerX = 500;
 	const centerY = 500;
 
-	let loser: Player | null | undefined = undefined;
+	let winner: Player | null | undefined = undefined;
 
 	const gravConst = 40;
 	const ejectConst = 0.03;
@@ -217,7 +218,7 @@
 	}
 
 	function onKeyDown(e: KeyboardEvent) {
-		if (loser === undefined) {
+		if (winner === undefined) {
 			onkeyDownMappings[e.key]?.();
 		}
 	}
@@ -279,8 +280,13 @@
 		if (oCollider) {
 			explode(oCollider);
 			explode(orbiter);
-			if (oCollider.name !== 'bullet' && orbiter.name !== 'bullet') {
-				loser = null;
+
+			// If players are killed in collision
+			if (!oCollider.explode && !orbiter.explode) {
+				doubleKill(oCollider as Player, orbiter as Player);
+			} else {
+				!oCollider.explode && kill(oCollider as Player);
+				!orbiter.explode && kill(orbiter as Player);
 			}
 			return;
 		}
@@ -291,20 +297,34 @@
 		});
 
 		if (bCollider) {
-			if (!orbiter.explode) {
-				stick(orbiter as Player, bCollider);
-			} else {
-				// Check if exploded with player in range
-				bCollider.players.forEach((player: Player) => {
-					const rotAngle = player.targetAngle + bCollider.rotationAngle;
-					const px = bCollider.x + Math.cos(rotAngle) * bCollider.radius;
-					const py = bCollider.y - Math.sin(rotAngle) * bCollider.radius;
-					if (doesCollide(orbiter.x, orbiter.y, orbiter.radius, px, py, player.radius)) {
-						bCollider.players.splice(bCollider.players.indexOf(player), 1);
-						loser = player;
+			// Check if player in range
+			const collision = bCollider.players.some((player: Player) => {
+				const rotAngle = player.targetAngle + bCollider.rotationAngle;
+				const px = bCollider.x + Math.cos(rotAngle) * bCollider.radius;
+				const py = bCollider.y - Math.sin(rotAngle) * bCollider.radius;
+				if (doesCollide(orbiter.x, orbiter.y, orbiter.radius, px, py, player.radius)) {
+					// If collision with player, player is garunteed dead
+					bCollider.players.splice(bCollider.players.indexOf(player), 1);
+
+					if (orbiter.explode) {
+						doubleKill(orbiter as Player, player);
+					} else {
+						kill(player);
 					}
-				});
-				explode(orbiter);
+					explode(orbiter);
+					return true;
+				}
+				return false;
+			});
+
+			if (collision) {
+				return
+			}
+
+			if (orbiter.explode) {
+				explode(orbiter)
+			} else {
+				stick(orbiter as Player, bCollider);
 			}
 		}
 	}
@@ -367,16 +387,35 @@
 
 	function explode(orbiter: Orbiter) {
 		orbiters.splice(orbiters.indexOf(orbiter), 1);
-		if (!orbiter.explode) {
-			loser = orbiter as Player;
+	}
+
+	function kill(player: Player) {
+		playerObjects.splice(playerObjects.findIndex((p) => p.id === player.id), 1);
+		if (playerObjects.length === 1 && winner == undefined) {
+			winner = playerObjects[0];
+			playerWon(winner.name);
+		}
+	}
+
+	function doubleKill(player1: Player, player2: Player) {
+		playerObjects.splice(playerObjects.findIndex((p) => p.id === player1.id), 1);
+		playerObjects.splice(playerObjects.findIndex((p) => p.id === player2.id), 1);
+		if (winner === undefined) {
+			if (playerObjects.length === 1) {
+				winner = playerObjects[0];
+				playerWon(winner.name);
+			} else if (playerObjects.length === 0 ) {
+				winner = null;
+				playerWon(null);
+			}
 		}
 	}
 </script>
 
 <svelte:window on:keydown={onKeyDown} on:keyup={onKeyUp} />
 
-{#if loser !== undefined}
-	<h1 id="lost">{loser === null ? 'You both lose!' : loser.name + ' lost!'}</h1>
+{#if winner !== undefined}
+	<h1 id="lost">{winner === null ? 'You both lose!' : winner.name + ' won!'}</h1>
 {/if}
 
 <h1 id="title">OutBlast</h1>
