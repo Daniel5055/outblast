@@ -83,7 +83,10 @@
 </div>
 
 {#if winner !== undefined}
-	<h1 id="won" class="overlay">{winner === null ? 'You both lose!' : winner + ' won!'}</h1>
+<div id="won" class="overlay">
+	<h1>{winner === null ? 'You both lose!' : winner + ' won!'}</h1>
+	<p>Press space to play again</p>
+</div>
 {/if}
 
 <style lang="css">
@@ -136,6 +139,12 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		-webkit-text-stroke: 1px black;
+		text-align: center;
 	}
+
+	#won h1 {
+		-webkit-text-stroke: 1px black;
+		margin-bottom: 100px;
+	}
+
 </style>
