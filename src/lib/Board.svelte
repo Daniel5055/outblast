@@ -5,71 +5,7 @@
   import { applyAcceleration, damp, move } from '../utils/functions/orbiter';
   import { createBullet, createPlayer, type Orbiter, type Player } from '../utils/types/orbiter';
 
-  let stop = false;
-  export let time: number;
-  export let step: number;
-  export let playerWon: (name: string | null) => void;
-  export let players: {
-    name: string;
-    keys: { left: string; right: string; eject: string; fire: string };
-  }[];
-
-  let frameOver = false;
-  let gameOver = false;
-
-  const onkeyDownMappings = Object.fromEntries(
-    players
-      .map((player) => Object.entries(player.keys))
-      .flatMap((keys, i) =>
-        keys.map(([input, key]): [string, () => void] => {
-          switch (input) {
-            case 'eject':
-              return [key, () => eject(playerObjects[i])];
-            case 'fire':
-              return [key, () => fire(playerObjects[i])];
-            case 'left':
-              return [
-                key,
-                () =>
-                  (playerObjects[i].cannonMovement = Math.min(
-                    playerObjects[i].cannonMovement + 1,
-                    1
-                  ) as 0 | 1),
-              ];
-            case 'right':
-              return [
-                key,
-                () =>
-                  (playerObjects[i].cannonMovement = Math.max(
-                    playerObjects[i].cannonMovement - 1,
-                    -1
-                  ) as 0 | -1),
-              ];
-            default:
-              throw new Error(`Unknown input type "${input}"`);
-          }
-        })
-      )
-  );
-
-  const onkeyUpMappings = Object.fromEntries(
-    players
-      .map((player) => Object.entries(player.keys))
-      .flatMap((keys, i) =>
-        keys.map(([input, key]): [string | undefined, (() => void) | undefined] => {
-          switch (input) {
-            case 'left':
-              return [key, () => (playerObjects[i].cannonMovement -= 1)];
-            case 'right':
-              return [key, () => (playerObjects[i].cannonMovement += 1)];
-            default:
-              return [undefined, undefined];
-          }
-        })
-      )
-      .filter((entry) => entry[0] !== undefined)
-  );
-
+  // Constants
   const centerX = 500;
   const centerY = 500;
 
@@ -78,8 +14,26 @@
   const fireConst = 0.04;
   const dampConst = 0.00001;
 
+  const cannonMovementTick = 0.05 / 17;
+  const cannonEdge = 0.5;
+
   const createCenteredBody = createBody.bind(null, centerX, centerY);
 
+  // Props
+  export let time: number;
+  export let step: number;
+  export let playerWon: (name: string | null) => void;
+  export let players: {
+    name: string;
+    keys: { left: string; right: string; eject: string; fire: string };
+  }[];
+
+  // Flags
+  let stop = false;
+  let frameOver = false;
+  let gameOver = false;
+
+  // Data structures
   let playerObjects = players.map((player, i) =>
     createPlayer({
       id: `p${i + 1}`,
@@ -151,6 +105,60 @@
 
   let orbiters: Orbiter[] = [];
 
+  // Key mappings
+  const onkeyDownMappings = Object.fromEntries(
+    players
+      .map((player) => Object.entries(player.keys))
+      .flatMap((keys, i) =>
+        keys.map(([input, key]): [string, () => void] => {
+          switch (input) {
+            case 'eject':
+              return [key, () => eject(playerObjects[i])];
+            case 'fire':
+              return [key, () => fire(playerObjects[i])];
+            case 'left':
+              return [
+                key,
+                () =>
+                  (playerObjects[i].cannonMovement = Math.min(
+                    playerObjects[i].cannonMovement + 1,
+                    1
+                  ) as 0 | 1),
+              ];
+            case 'right':
+              return [
+                key,
+                () =>
+                  (playerObjects[i].cannonMovement = Math.max(
+                    playerObjects[i].cannonMovement - 1,
+                    -1
+                  ) as 0 | -1),
+              ];
+            default:
+              throw new Error(`Unknown input type "${input}"`);
+          }
+        })
+      )
+  );
+
+  const onkeyUpMappings = Object.fromEntries(
+    players
+      .map((player) => Object.entries(player.keys))
+      .flatMap((keys, i) =>
+        keys.map(([input, key]): [string | undefined, (() => void) | undefined] => {
+          switch (input) {
+            case 'left':
+              return [key, () => (playerObjects[i].cannonMovement -= 1)];
+            case 'right':
+              return [key, () => (playerObjects[i].cannonMovement += 1)];
+            default:
+              return [undefined, undefined];
+          }
+        })
+      )
+      .filter((entry) => entry[0] !== undefined)
+  );
+
   onMount(() => {
     // Add the players to the central body, equally spaced
     playerObjects.forEach((player, i) =>
@@ -158,9 +166,7 @@
     );
   });
 
-  const cannonMovement = 0.05 / 17;
-  const cannonEdge = 0.5;
-
+  // This is basically the game loop, occuring every time tick
   $: {
     time;
     frameOver = false;
@@ -207,9 +213,9 @@
 
     playerObjects = playerObjects.map((p) => {
       if (p.cannonMovement > 0 && p.cannonAngle < Math.PI - cannonEdge) {
-        p.cannonAngle += cannonMovement * step;
+        p.cannonAngle += cannonMovementTick * step;
       } else if (p.cannonMovement < 0 && p.cannonAngle > cannonEdge) {
-        p.cannonAngle -= cannonMovement * step;
+        p.cannonAngle -= cannonMovementTick * step;
       }
       return p;
     });
@@ -225,6 +231,8 @@
       onkeyUpMappings[e.key]?.();
     }
   }
+
+  // Utility functions
   function eject(player: Player) {
     if (player.target !== null) {
       const b = player.target;
@@ -243,15 +251,19 @@
       const angle = centerX > player.x ? raw + Math.PI : raw;
 
       player.vx =
-        (Math.cos(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod +
+        ((Math.cos(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod) *
+          (b.rotateClockwise ? 1 : -1) +
         (b.orbitPeriod === 0
           ? 0
-          : (Math.cos(angle + Math.PI / 2) * distance * 2 * Math.PI) / b.orbitPeriod);
+          : ((Math.cos(angle + Math.PI / 2) * distance * 2 * Math.PI) / b.orbitPeriod) *
+            (b.orbitClockwise ? 1 : -1));
       player.vy =
-        (-Math.sin(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod -
+        ((-Math.sin(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod) *
+          (b.rotateClockwise ? 1 : -1) -
         (b.orbitPeriod === 0
           ? 0
-          : (Math.sin(angle + Math.PI / 2) * distance * 2 * Math.PI) / b.orbitPeriod);
+          : ((Math.sin(angle + Math.PI / 2) * distance * 2 * Math.PI) / b.orbitPeriod) *
+            (b.orbitClockwise ? 1 : -1));
       player.ignore = b;
 
       applyAcceleration(
@@ -364,8 +376,12 @@
       name: 'bullet',
       x: b.x + Math.cos(rotAngle) * b.radius,
       y: b.y - Math.sin(rotAngle) * b.radius,
-      vx: (Math.cos(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod,
-      vy: (-Math.sin(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod,
+      vx:
+        ((Math.cos(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod) *
+        (b.rotateClockwise ? 1 : -1),
+      vy:
+        ((-Math.sin(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod) *
+        (b.rotateClockwise ? 1 : -1),
       ignore: b,
     });
 
@@ -483,7 +499,6 @@
   .spot {
     fill: #444;
   }
-
   .p1 {
     fill: var(--player1-colour);
   }
