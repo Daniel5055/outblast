@@ -14,6 +14,8 @@
 		keys: { left: string; right: string; eject: string; fire: string };
 	}[];
 
+	let frameOver = false;
+
 	const onkeyDownMappings = Object.fromEntries(
 		players
 			.map((player) => Object.entries(player.keys))
@@ -160,7 +162,9 @@
 	const cannonMovement = 0.05 / 17;
 	const cannonEdge = 0.5;
 
-	$: if (!stop) {
+	$: { time; frameOver = false}
+	$: if (!stop && !frameOver) {
+		frameOver = true
 		bodies = bodies.map((body) => {
 			body.orbitAngle =
 				body.orbitDistance === 0
