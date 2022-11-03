@@ -1,4 +1,4 @@
-import type { Body } from "./body";
+import type { Body } from './body';
 
 const playerRadius = 15;
 const playerCannonWidth = 20;
@@ -32,28 +32,35 @@ export interface Player extends Orbiter {
 	cannonAngle: number;
 	cannonWidth: number;
 	cannonHeight: number;
+	cannonMovement: -1 | 0 | 1;
 }
 
 // Factory functions
-export function createPlayer(playerData: OrbiterData & { target: Body | null; targetAngle: number; cannonAngle: number }): Player {
+export function createPlayer(
+	playerData: OrbiterData & { target: Body | null; cannonAngle: number }
+): Player {
 	return {
 		...playerData,
 		radius: playerRadius,
 		cannonWidth: playerCannonWidth,
 		cannonHeight: playerCannonHeight,
+		cannonMovement: 0,
+		targetAngle: 0,
 		x: 0,
 		y: 0,
 		vx: 0,
 		vy: 0,
 		ignore: null,
-		explode: false,
-	}
+		explode: false
+	};
 }
 
-export function createBullet(bulletData: OrbiterData & { ignore: Body | null; x: number; y: number; vx: number; vy: number; }) {
+export function createBullet(
+	bulletData: OrbiterData & { ignore: Body | null; x: number; y: number; vx: number; vy: number }
+) {
 	return {
 		...bulletData,
 		radius: bulletRadius,
-		explode: true,
-	}
+		explode: true
+	};
 }

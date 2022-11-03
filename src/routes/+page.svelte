@@ -2,6 +2,29 @@
 	import Board from '../lib/Board.svelte';
 	import { onMount } from 'svelte';
 
+	const players = [
+		{
+			name: 'Player 1',
+			score: 0,
+			keys: {
+				eject: 'w',
+				left: 'a',
+				fire: 's',
+				right: 'd'
+			}
+		},
+		{
+			name: 'Player 2',
+			score: 0,
+			keys: {
+				eject: 'ArrowUp',
+				left: 'ArrowLeft',
+				fire: 'ArrowDown',
+				right: 'ArrowRight'
+			}
+		}
+	];
+
 	let frameTime = 0;
 	let prevFrameTime = 0;
 	onMount(() => {
@@ -18,7 +41,7 @@
 </script>
 
 <div id="main">
-	<Board time={frameTime} step={frameTime - prevFrameTime} />
+	<Board time={frameTime} step={frameTime - prevFrameTime} {players} />
 </div>
 
 <style lang="css">

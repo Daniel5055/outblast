@@ -1,4 +1,4 @@
-import type { Player } from "./orbiter";
+import type { Player } from './orbiter';
 
 interface BodyData {
 	name: string;

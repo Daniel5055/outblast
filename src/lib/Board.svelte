@@ -5,12 +5,68 @@
 	import { applyAcceleration, damp, move } from '../utils/functions/orbiter';
 	import { createBullet, createPlayer, type Orbiter, type Player } from '../utils/types/orbiter';
 
-	const movements = { p1Left: false, p1Right: false, p2Left: false, p2Right: false };
 	let stop = false;
-	let p1: Player;
-	let p2: Player;
 	export let time: number;
 	export let step: number;
+	export let players: {
+		name: string;
+		score: number;
+		keys: { left: string; right: string; eject: string; fire: string };
+	}[];
+
+	const onkeyDownMappings = Object.fromEntries(
+		players
+			.map((player) => Object.entries(player.keys))
+			.flatMap((keys, i) =>
+				keys.map(([input, key]): [string, () => void] => {
+					switch (input) {
+						case 'eject':
+							return [key, () => eject(playerObjects[i])];
+						case 'fire':
+							return [key, () => fire(playerObjects[i])];
+						case 'left':
+							return [
+								key,
+								() =>
+									(playerObjects[i].cannonMovement = Math.min(
+										playerObjects[i].cannonMovement + 1,
+										1
+									) as 0 | 1)
+							];
+						case 'right':
+							return [
+								key,
+								() =>
+									(playerObjects[i].cannonMovement = Math.max(
+										playerObjects[i].cannonMovement - 1,
+										-1
+									) as 0 | -1)
+							];
+						default:
+							throw new Error(`Unknown input type "${input}"`);
+					}
+				})
+			)
+	);
+
+	const onkeyUpMappings = Object.fromEntries(
+		players
+			.map((player) => Object.entries(player.keys))
+			.flatMap((keys, i) =>
+				keys.map(([input, key]): [string | undefined, (() => void) | undefined] => {
+					switch (input) {
+						case 'left':
+							return [key, () => (playerObjects[i].cannonMovement -= 1)];
+						case 'right':
+							return [key, () => (playerObjects[i].cannonMovement += 1)];
+						default:
+							return [undefined, undefined];
+					}
+				})
+			)
+			.filter((entry) => entry[0] !== undefined)
+	);
+
 	const centerX = 500;
 	const centerY = 500;
 
@@ -22,6 +78,15 @@
 	const dampConst = 0.00001;
 
 	const createCenteredBody = createBody.bind(null, centerX, centerY);
+
+	let playerObjects = players.map((player, i) =>
+		createPlayer({
+			id: `p${i + 1}`,
+			name: player.name,
+			cannonAngle: Math.PI / 2,
+			target: null
+		})
+	);
 
 	let bodies = [
 		createCenteredBody({
@@ -86,26 +151,13 @@
 	let orbiters: Orbiter[] = [];
 
 	onMount(() => {
-		p1 = createPlayer({
-			id: 'p1',
-			name: 'Player 1',
-			targetAngle: 0,
-			cannonAngle: Math.PI / 2,
-			target: null,
-		});
-		p2 = createPlayer({
-			id: 'p2',
-			name: 'Player 2',
-			targetAngle: 0,
-			cannonAngle: Math.PI / 2,
-			target: null,
-		});
-
-		addPlayer(p1, bodies[0], (Math.PI * 3) / 2);
-		addPlayer(p2, bodies[0], Math.PI / 2);
+		// Add the players to the central body, equally spaced
+		playerObjects.forEach((player, i) =>
+			addPlayer(player, bodies[0], (i * 2 * Math.PI) / players.length + Math.PI / 2)
+		);
 	});
 
-	const cannonMovement = 0.05;
+	const cannonMovement = 0.05 / 17;
 	const cannonEdge = 0.5;
 
 	$: if (!stop) {
@@ -150,65 +202,23 @@
 		});
 		orbiters = orbiters;
 
-		if (movements.p1Left && p1.cannonAngle < Math.PI - cannonEdge) {
-			p1.cannonAngle += cannonMovement;
-		}
-		if (movements.p1Right && p1.cannonAngle > cannonEdge) {
-			p1.cannonAngle -= cannonMovement;
-		}
-		if (movements.p2Left && p2.cannonAngle < Math.PI - cannonEdge) {
-			p2.cannonAngle += cannonMovement;
-		}
-		if (movements.p2Right && p2.cannonAngle > cannonEdge) {
-			p2.cannonAngle -= cannonMovement;
-		}
+		playerObjects = playerObjects.map((p) => {
+			if (p.cannonMovement > 0 && p.cannonAngle < Math.PI - cannonEdge) {
+				p.cannonAngle += cannonMovement * step;
+			} else if (p.cannonMovement < 0 && p.cannonAngle > cannonEdge) {
+				p.cannonAngle -= cannonMovement * step;
+			}
+			return p;
+		});
 	}
 
 	function onKeyDown(e: KeyboardEvent) {
 		if (loser === undefined) {
-			switch (e.key) {
-				case 'w':
-					eject(p1);
-					break;
-				case 'a':
-					movements.p1Left = true;
-					break;
-				case 'd':
-					movements.p1Right = true;
-					break;
-				case 's':
-					fire(p1);
-					break;
-				case 'ArrowUp':
-					eject(p2);
-					break;
-				case 'ArrowDown':
-					fire(p2);
-					break;
-				case 'ArrowLeft':
-					movements.p2Left = true;
-					break;
-				case 'ArrowRight':
-					movements.p2Right = true;
-					break;
-			}
+			onkeyDownMappings[e.key]?.();
 		}
 	}
 	function onKeyUp(e: KeyboardEvent) {
-		switch (e.key) {
-			case 'a':
-				movements.p1Left = false;
-				break;
-			case 'd':
-				movements.p1Right = false;
-				break;
-			case 'ArrowLeft':
-				movements.p2Left = false;
-				break;
-			case 'ArrowRight':
-				movements.p2Right = false;
-				break;
-		}
+		onkeyUpMappings[e.key]?.();
 	}
 	function eject(player: Player) {
 		if (player.target !== null) {
@@ -257,7 +267,6 @@
 	}
 
 	function checkCollisions(orbiter: Orbiter) {
-
 		const oCollider = orbiters.find((o) => {
 			if (orbiter === o) return false;
 			return doesCollide(o.x, o.y, o.radius, orbiter.x, orbiter.y, orbiter.radius);
@@ -333,8 +342,8 @@
 			y: b.y - Math.sin(rotAngle) * b.radius,
 			vx: (Math.cos(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod,
 			vy: (-Math.sin(rotAngle + Math.PI / 2) * 2 * b.radius * Math.PI) / b.rotationPeriod,
-			ignore: b,
-		})
+			ignore: b
+		});
 
 		applyAcceleration(
 			bullet,
