@@ -1,41 +1,10 @@
-interface BodyData {
-	name: string;
-	orbitDistance: number;
-	radius: number;
-	startOrbitAngle: number;
-	orbitPeriod: number;
-	orbitClockwise: boolean;
-	rotationPeriod: number;
-	rotateClockwise: boolean;
-	bulletProg: number;
-}
+import type { Body } from "./body";
 
-export interface Body extends BodyData {
-	orbitAngle: number | undefined;
-	rotationAngle: number;
-	x: number;
-	y: number;
-	players: Player[];
-	readonly bullets: number;
-}
+const playerRadius = 15;
+const playerCannonWidth = 20;
+const playerCannonHeight = 30;
 
-// Body factory
-export const createBody = function (centerX: number, centerY: number, body: BodyData): Body {
-	return {
-		...body,
-		x: 0,
-		y: 0,
-		rotationAngle: 0,
-		players: [],
-		set orbitAngle(angle: number) {
-			this.x = centerX + Math.cos(angle) * this.orbitDistance;
-			this.y = centerY - Math.sin(angle) * this.orbitDistance;
-		},
-		get bullets() {
-			return Math.floor(this.bulletProg);
-		}
-	};
-};
+const bulletRadius = 10;
 
 interface OrbiterData {
 	id: string;
@@ -64,12 +33,6 @@ export interface Player extends Orbiter {
 	cannonWidth: number;
 	cannonHeight: number;
 }
-
-const playerRadius = 15;
-const playerCannonWidth = 20;
-const playerCannonHeight = 30;
-
-const bulletRadius = 10;
 
 // Factory functions
 export function createPlayer(playerData: OrbiterData & { target: Body | null; targetAngle: number; cannonAngle: number }): Player {

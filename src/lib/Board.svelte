@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { createBody, createBullet, createPlayer, type Body, type Orbiter, type Player } from '../utils/types/bodies';
+	import { createBody, type Body } from '../utils/types/body';
 	import { onMount } from 'svelte';
 	import { randomisePlanets } from '../utils/maps/base';
 	import { applyAcceleration, damp, move } from '../utils/functions/orbiter';
+	import { createBullet, createPlayer, type Orbiter, type Player } from '../utils/types/orbiter';
 
 	const movements = { p1Left: false, p1Right: false, p2Left: false, p2Right: false };
 	let stop = false;

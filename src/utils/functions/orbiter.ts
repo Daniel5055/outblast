@@ -1,4 +1,4 @@
-import type { Orbiter } from '../types/bodies';
+import type { Orbiter } from "../types/orbiter";
 
 export function applyAcceleration(orbiter: Orbiter, ax: number, ay: number, step: number) {
 	orbiter.vx += ax * step;
