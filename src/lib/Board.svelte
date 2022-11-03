@@ -186,9 +186,6 @@
     orbiters.forEach((orbiter) => {
       // Apply gravity
 
-      const distance = Math.sqrt(
-        Math.pow(centerX - orbiter.x, 2) + Math.pow(centerY - orbiter.y, 2)
-      );
       const angle =
         Math.atan((centerY - orbiter.y) / -(centerX - orbiter.x)) +
         (centerX > orbiter.x ? Math.PI : 0);
