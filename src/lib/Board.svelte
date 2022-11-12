@@ -185,7 +185,7 @@
         ((time % body.rotationPeriod) / body.rotationPeriod) *
         (body.rotateClockwise ? 2 : -2) *
         Math.PI;
-      body.bulletProg = body.bulletProg + 0.0001 * body.radius;
+      body.bulletProg = body.bulletProg + 0.0001 * body.radius * step / 17;
       return body;
     });
 
