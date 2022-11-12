@@ -266,12 +266,8 @@
             (b.orbitClockwise ? 1 : -1));
       player.ignore = b;
 
-      applyAcceleration(
-        player,
-        Math.cos(rotAngle + player.cannonAngle - Math.PI / 2) * ejectConst,
-        -Math.sin(rotAngle + player.cannonAngle - Math.PI / 2) * ejectConst,
-        step
-      );
+      player.vx = Math.cos(rotAngle + player.cannonAngle - Math.PI / 2) * ejectConst * 17;
+      player.vy = -Math.sin(rotAngle + player.cannonAngle - Math.PI / 2) * ejectConst * 17;
       orbiters.push(player);
       orbiters = orbiters;
 
@@ -385,12 +381,8 @@
       ignore: b,
     });
 
-    applyAcceleration(
-      bullet,
-      Math.cos(rotAngle + player.cannonAngle - Math.PI / 2) * fireConst,
-      -Math.sin(rotAngle + player.cannonAngle - Math.PI / 2) * fireConst,
-      step
-    );
+    bullet.vx = Math.cos(rotAngle + player.cannonAngle - Math.PI / 2) * fireConst * 17;
+    bullet.vy = -Math.sin(rotAngle + player.cannonAngle - Math.PI / 2) * fireConst * 17;
     orbiters.push(bullet);
     orbiters = orbiters;
 
